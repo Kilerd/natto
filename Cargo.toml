@@ -1,0 +1,15 @@
+[package]
+name = "natto"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7.5"
+gotcha = { git = "https://github.com/Kilerd/gotcha.git", version = "0.1.12" }
+itertools = "0.13.0"
+serde = {version = "1.0", features = ["derive"]}
+serde_json = "1.0.128"
+tokio = {version="1.40.0", features = ["full"]}
+tokio-postgres = {version="0.7", features = ["with-serde_json-1"]}
+tracing = "0.1"
+tracing-subscriber = "0.3"
