@@ -29,12 +29,6 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
         }
     };
 
-    // Prepare column names and values for the INSERT statement
-    // let mut column_names = Vec::new();
-    // let mut column_values = Vec::new();
-    // let mut param_placeholders = Vec::new();
-    // let mut params:  = Vec::new();
-
     let column_names = table
         .columns
         .iter()
@@ -47,18 +41,6 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
             }
         })
         .collect_vec();
-    // let column_values = table
-    //     .columns
-    //     .iter()
-    //     .enumerate()
-    //     .filter_map(|(i, column)| {
-    //         if let Some(value) = values.get(&column.name).cloned() {
-    //             Some(&value)
-    //         } else {
-    //             None
-    //         }
-    //     })
-    //     .collect_vec();
 
     let param_placeholders = table
         .columns

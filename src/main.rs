@@ -130,6 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     GotchaApp::new()
         .post("/retrieve", crud::retrieval::retrieve_data)
         .post("/create", crud::creation::create_data)
+        .post("/delete", crud::deletion::delete_data)
         .data(app_state)
         .done()
         .serve("127.0.0.1", 8000).await;
