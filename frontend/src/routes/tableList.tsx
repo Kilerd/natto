@@ -34,7 +34,7 @@ const TableList: React.FC = () => {
                 </div>
                 <div className="container mx-auto">
                     <div >
-                        <DataTable columns={columns} data={tableData.state === 'hasData' ? tableData.data : []} />
+                        <DataTable tableName={tableName} columns={columns} data={tableData.state === 'hasData' ? tableData.data : []} columnDefinitions={tables[tableName]?.columns ?? []} />
                     </div>
                 </div>
             </div>
