@@ -24,7 +24,7 @@ const Sidebar: React.FC = () => {
   }
   return (
     <div className="w-64 bg-gray-100 p-4">
-      <h2 className="text-xl font-semibold mb-4">Tables</h2>
+      <h2 className="text-xl font-semibold mb-4">Natto <span className="text-sm text-gray-500">v0.1</span></h2>
       <ul className="space-y-2">
         {Object.values(tables).map((table, index) => (
           <li key={index}>

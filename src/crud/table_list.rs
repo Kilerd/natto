@@ -1,16 +1,42 @@
+use std::collections::HashMap;
+
 use gotcha::{ Responder, State, Json};
+use serde::{Deserialize, Serialize};
 use crate::AppState;
 use serde_json::json;
+
+use super::Response;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct TableResponse {
+    name: String,
+    columns: Vec<ColumnResponse>    
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct ColumnResponse     {
+    name: String,
+    r#type: String
+}   
 
 pub async fn get_all_tables(app_state: State<AppState>) -> impl Responder {
     let tables = app_state.tables.clone();
     
-    let table_names: Vec<String> = tables.iter().map(|table| table.name.clone()).collect();
+    let table_info: HashMap<String, TableResponse> = tables.iter().map(|table| {
+        (
+            table.name.clone(),
+            TableResponse {
+                name: table.name.clone(),
+                columns: table.columns.iter().map(|column| ColumnResponse {
+                    name: column.name.clone(),
+                    r#type: column.ttype.clone(),
+                }).collect(),
+            }
+        )
+    }).collect();
     
-    let response = json!({
-        "data": table_names
-    });
-    Json(response).into_response()
+    
+    Json(Response{data: table_info}).into_response()
 }
 
 
