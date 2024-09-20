@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use gotcha::{axum::{http::Method, routing::MethodFilter}, GotchaApp};
+use axum::http::HeaderValue;
+use gotcha::{axum::{http::Method, routing::MethodFilter, }, GotchaApp, };
 use tokio_postgres::{Client, NoTls};
 use tracing::{info, debug};
 use tracing_subscriber;
-
-
+use tower_http::cors::CorsLayer;
 mod crud;
 
 #[derive(Debug, Clone)]
@@ -128,9 +128,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("start web server on http://127.0.0.1:8000");
     GotchaApp::new()
+    .get("/tables", crud::table_list::get_all_tables)
         .post("/retrieve", crud::retrieval::retrieve_data)
         .post("/create", crud::creation::create_data)
         .post("/delete", crud::deletion::delete_data)
+        .layer(CorsLayer::permissive())
         .data(app_state)
         .done()
         .serve("127.0.0.1", 8000).await;
