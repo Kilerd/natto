@@ -26,15 +26,15 @@ const Sidebar: React.FC = () => {
     <div className="w-64 bg-gray-100 p-4">
       <h2 className="text-xl font-semibold mb-4">Tables</h2>
       <ul className="space-y-2">
-        {tables.map((table, index) => (
+        {Object.values(tables).map((table, index) => (
           <li key={index}>
             <Button
               variant="outline"
               className="w-full justify-start"
               asChild
             >
-              <Link to={`/tables/${table}`}>
-                {table}
+              <Link to={`/tables/${table.name}`}>
+                {table.name}
               </Link>
             </Button>
           </li>
