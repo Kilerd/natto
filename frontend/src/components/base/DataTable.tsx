@@ -10,6 +10,7 @@ import { FilterIcon } from "lucide-react"
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog"
 import { DialogHeader } from "../ui/dialog"
 import { Label } from "../ui/label"
+import { ColumnTypeToCreateComponent } from "./tableUtils"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -48,9 +49,7 @@ export function DataTable<TData, TValue>({
     const handleInputChange = (columnName: string, value: string) => {
         setNewRecord(prev => ({
             ...prev,
-            [columnName]: columnDefinitions.find(col => col.name === columnName)?.type === 'integer'
-                ? parseInt(value, 10) || 0
-                : value
+            [columnName]: value
         }));
     };
 
@@ -114,18 +113,7 @@ export function DataTable<TData, TValue>({
                             </DialogHeader>
                             <div className="grid gap-4 py-4">
                                 {columnDefinitions.map((column) => (
-                                    <div key={column.name} className="grid w-full max-w-sm items-center gap-1.5">
-                                        <Label htmlFor={column.name}>
-                                            {column.name.charAt(0).toUpperCase() + column.name.slice(1)}
-                                        </Label>
-                                        <Input
-                                            id={column.name}
-                                            type={column.type === 'integer' ? 'number' : 'text'}
-                                            className="col-span-3"
-                                            value={newRecord[column.name] || ''}
-                                            onChange={(e) => handleInputChange(column.name, e.target.value)}
-                                        />
-                                    </div>
+                                    <ColumnTypeToCreateComponent columnName={column.name} columnType={column.type} value={newRecord[column.name] || ''} onChange={(value) => handleInputChange(column.name, value)} />
                                 ))}
                             </div>
                             <DialogFooter>

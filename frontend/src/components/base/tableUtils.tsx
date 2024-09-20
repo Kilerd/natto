@@ -1,51 +1,157 @@
-import { TableColumn } from "@/stores";
+import { ColumnType, TableColumn } from "@/stores";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "../ui/checkbox";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
 
-export function columnDefsGenrator<T>(columnsDefines: TableColumn[]): ColumnDef<T>[]  {
+export function columnDefGenrator<T>(columnsDefinition: TableColumn): ColumnDef<T> {
+    console.log("columnDefGenrator", columnsDefinition);
+    switch (columnsDefinition.type) {
+        case ColumnType.String:
+            return {
+                id: columnsDefinition.name,
+                accessorKey: columnsDefinition.name,
+                header: ({ table }) => {
+                    const headerText = columnsDefinition.name.charAt(0).toUpperCase() + columnsDefinition.name.slice(1);
+                    return headerText;
+                },
+                cell: ({ row }) => {
+                    const value = row.getValue<any>(columnsDefinition.name);
+                    return value;
+                },
+                enableSorting: true,
+                enableHiding: true,
+            }
+        case ColumnType.Integer:
+        case ColumnType.Float:
+            return {
+                id: columnsDefinition.name,
+                accessorKey: columnsDefinition.name,
+                header: ({ table }) => {
+                    const headerText = columnsDefinition.name.charAt(0).toUpperCase() + columnsDefinition.name.slice(1);
+                    return headerText;
+                },
+                cell: ({ row }) => {
+                    const value = row.getValue<any>(columnsDefinition.name);
+                    return value;
+                },
+                enableSorting: true,
+                enableHiding: true,
+            }
+        case ColumnType.Boolean:
+            return {
+                id: columnsDefinition.name,
+                accessorKey: columnsDefinition.name,
+                header: ({ table }) => {
+                    const headerText = columnsDefinition.name.charAt(0).toUpperCase() + columnsDefinition.name.slice(1);
+                    return `${headerText}?`;
+                },
+                cell: ({ row }) => {
+                    const value = row.getValue<boolean>(columnsDefinition.name);
+                    return <Checkbox
+                        checked={value}
+                    />;
+                },
+                enableSorting: true,
+                enableHiding: true,
+            }
+    }
+}
+export function columnDefsGenrator<T>(columnsDefines: TableColumn[]): ColumnDef<T>[] {
     let defs = [
         {
             id: "select",
             header: ({ table }) => (
-              <Checkbox
-                checked={
-                  table.getIsAllPageRowsSelected() ||
-                  (table.getIsSomePageRowsSelected() && "indeterminate")
-                }
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-              />
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
             ),
             cell: ({ row }) => (
-              <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-              />
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
             ),
             enableSorting: false,
             enableHiding: false,
         } as ColumnDef<T>,
     ];
-    
-    return defs.concat(columnsDefines.map((column) => {
-        return {
-            id: column.name,
-            accessorKey: column.name,
-            header: ({ table }) => {
-                const headerText = column.name.charAt(0).toUpperCase() + column.name.slice(1);
-                return column.type === 'integer' 
-                    ? <div className="text-right">{headerText}</div>
-                    : headerText;
-            },
-            cell: ({ row }) => {
-                const value = row.getValue<any>(column.name);
-                return column.type === 'integer'
-                    ? <div className="text-right">{value}</div>
-                    : value;
-            },
-            enableSorting: true,
-            enableHiding: true,
-        }
-    }))
+
+    return defs.concat(columnsDefines.map((column) => columnDefGenrator(column)))
 }
+
+
+interface ColumnTypeToCreateComponentProps {
+    columnName: string;
+    columnType: ColumnType;
+    value: any;
+    onChange: (value: any) => void;
+}
+
+export function ColumnTypeToCreateComponent({ columnName, columnType, value, onChange }: ColumnTypeToCreateComponentProps) {
+    console.log("ColumnTypeToCreateComponent", columnType);
+    switch (columnType) {
+        case ColumnType.String:
+            return (<div key={columnName} className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor={columnName}>
+                    {columnName.charAt(0).toUpperCase() + columnName.slice(1)}
+                </Label>
+                <Input
+                    id={columnName}
+                    type="text"
+                    className="col-span-3"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                />
+            </div>);
+
+        case ColumnType.Integer:
+            return (<div key={columnName} className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor={columnName}>
+                    {columnName.charAt(0).toUpperCase() + columnName.slice(1)}
+                </Label>
+                <Input
+                    id={columnName}
+                    type="number"
+                    className="col-span-3"
+                    value={value}
+                    onChange={(e) => onChange(parseInt(e.target.value, 10))}
+                />
+            </div>)
+        case ColumnType.Float:
+            return (<div key={columnName} className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor={columnName}>
+                    {columnName.charAt(0).toUpperCase() + columnName.slice(1)}
+                </Label>
+                <Input
+                    id={columnName}
+                    type="number"
+                    className="col-span-3"
+                    value={value}
+                    onChange={(e) => onChange(parseFloat(e.target.value))}
+                />
+            </div>)
+
+
+        case ColumnType.Boolean:
+            return (<div key={columnName} className="flex items-center space-x-2">
+                <Checkbox
+                    id={columnName}
+                    checked={value}
+                    onCheckedChange={(checked) => onChange(checked ? true :false)}
+                />
+                <label
+                    htmlFor={columnName}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                    {columnName.charAt(0).toUpperCase() + columnName.slice(1)}
+                </label>
+            </div>)
+    }
+}   

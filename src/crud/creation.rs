@@ -1,3 +1,4 @@
+use crate::state::ColumnType;
 use crate::AppState;
 use gotcha::tracing::{debug, warn};
 use gotcha::{debug_handler, Json, Responder, State};
@@ -76,8 +77,8 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
             trace!("Column: {:?} {:?}", &column.name, &column.ttype);
             if let Some(value) = values.get(&column.name).cloned() {
                 trace!("value: {:?}", &value);
-                match column.ttype.as_str() {
-                    "integer" => {
+                match column.ttype {
+                    ColumnType::Integer => {
                         if let Some(v) = value.as_i64() {
                             let int_value = v as i32;
                             Some(Box::new(int_value)
@@ -86,9 +87,25 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
                             None
                         }
                     }
-                    "text" | "character varying" => {
+                    ColumnType::String => {
                         if let Some(v) = value.as_str() {
                             Some(Box::new(v.to_string())
+                                as Box<dyn tokio_postgres::types::ToSql + Send + Sync>)
+                        } else {
+                            None
+                        }
+                    },
+                    ColumnType::Float => {
+                        if let Some(v) = value.as_f64() {
+                            Some(Box::new(v as f32)
+                                as Box<dyn tokio_postgres::types::ToSql + Send + Sync>)
+                        } else {
+                            None
+                        }
+                    }
+                    ColumnType::Boolean => {
+                        if let Some(v) = value.as_bool() {
+                            Some(Box::new(v)
                                 as Box<dyn tokio_postgres::types::ToSql + Send + Sync>)
                         } else {
                             None
@@ -96,7 +113,7 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
                     }
                     // Add more type conversions as needed
                     _ => {
-                        warn!("Unsupported column type: {}", column.ttype);
+                        warn!("Unsupported column type on create: {:?}", column.ttype);
                         None
                     }
                 }

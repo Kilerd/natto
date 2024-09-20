@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use gotcha::{ Responder, State, Json};
 use serde::{Deserialize, Serialize};
-use crate::AppState;
+use crate::{state::ColumnType, AppState};
 use serde_json::json;
 
 use super::Response;
@@ -17,7 +17,7 @@ pub(crate) struct TableResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct ColumnResponse     {
     name: String,
-    r#type: String
+    r#type: ColumnType
 }   
 
 pub async fn get_all_tables(app_state: State<AppState>) -> impl Responder {

@@ -3,10 +3,18 @@ import { atomWithRefresh, loadable } from 'jotai/utils';
 
 export const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+
+export enum ColumnType {
+    Boolean = "Boolean"     ,
+    String = "String",
+    Integer = "Integer",
+    Float = "Float",
+}
+
 // Define interfaces for table and column information
 export interface TableColumn {
   name: string;
-  type: string;
+  type: ColumnType;
 }
 
 export interface Table {

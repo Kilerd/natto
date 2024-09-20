@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::http::HeaderValue;
 use gotcha::{axum::{http::Method, routing::MethodFilter, }, GotchaApp, };
-use state::{Column, Table};
+use state::{Column, ColumnType, Table};
 use tokio_postgres::{Client, NoTls};
 use tracing::{info, debug};
 use tracing_subscriber;
@@ -94,7 +94,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let columns: Vec<Column> = column_rows.iter().map(|row| Column {
             name: row.get("column_name"),
-            ttype: row.get("data_type"),
+            ttype: ColumnType::from_str(row.get("data_type")),
             nullable: row.get::<_, String>("is_nullable") == "YES",
             default: row.get("column_default"),
             primary_key: row.get("is_primary_key"),

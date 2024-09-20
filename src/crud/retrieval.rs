@@ -1,7 +1,9 @@
+use crate::state::ColumnType;
 use crate::AppState;
 use gotcha::tracing::{debug, warn};
 use gotcha::{Json, Responder, State};
 use serde::{Deserialize, Serialize};
+use tokio_postgres::Column;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct RetrieveData {
@@ -30,29 +32,30 @@ pub async fn retrieve_data(data: State<AppState>, payload: Json<RetrieveData>) -
             .join(", ");
 
         // Construct the base SQL query
-        let mut query = format!(
-            "SELECT {} FROM {}",
-            columns, table_name
-        );
+        let mut query = format!("SELECT {} FROM {}", columns, table_name);
 
         // Add WHERE clause if filter is provided
         if let Some(filter_keyword) = &payload.filter {
-            let filter_conditions: Vec<String> = table.columns
+            let filter_conditions: Vec<String> = table
+                .columns
                 .iter()
                 .filter_map(|col| {
-                    match col.ttype.as_str() {
-                        "text" | "character varying" => 
-                            Some(format!("{} ILIKE '%{}%'", col.name, filter_keyword)),
-                        "integer" => {
-                            filter_keyword.parse::<i32>().ok().map(|parsed_int| {
-                                format!("{} = {}", col.name, parsed_int)
-                            })
-                        },
-                        // Add more type-specific conditions as needed
+                    match col.ttype {
+                        ColumnType::String => {
+                            Some(format!("{} ILIKE '%{}%'", col.name, filter_keyword))
+                        }
+                        ColumnType::Integer => filter_keyword
+                            .parse::<i32>()
+                            .ok()
+                            .map(|parsed_int| format!("{} = {}", col.name, parsed_int)),
+                        ColumnType::Float => filter_keyword
+                            .parse::<f64>()
+                            .ok()
+                            .map(|parsed_float| format!("{} = {}", col.name, parsed_float)),
                         _ => {
-                            warn!("Unsupported column type for filtering: {}", col.ttype);
+                            warn!("Unsupported column type for filtering: {:?}", col.ttype);
                             None // Skip unsupported types
-                        },
+                        }
                     }
                 })
                 .filter(|condition| !condition.is_empty())
@@ -76,14 +79,23 @@ pub async fn retrieve_data(data: State<AppState>, payload: Json<RetrieveData>) -
                     .map(|row| {
                         let mut obj = serde_json::Map::new();
                         for (i, column) in table.columns.iter().enumerate() {
-                            let value = match column.ttype.as_str() {
-                                "integer" => serde_json::Value::Number(row.get::<_, i32>(i).into()),
-                                "text" | "character varying" => {
+                            let value = match column.ttype {
+                                ColumnType::Integer => {
+                                    serde_json::Value::Number(row.get::<_, i32>(i).into())
+                                }
+                                ColumnType::String => {
                                     serde_json::Value::String(row.get::<_, String>(i))
+                                }
+                                ColumnType::Float => serde_json::Value::Number(
+                                    serde_json::Number::from_f64(dbg!(row.get::<_, f32>(i)) as f64)
+                                        .expect("can't convert f32 to f64"),
+                                ),
+                                ColumnType::Boolean => {
+                                    serde_json::Value::Bool(row.get::<_, bool>(i))
                                 }
                                 // Add more type conversions as needed
                                 _ => {
-                                    warn!("Unsupported column type: {}", column.ttype);
+                                    warn!("Unsupported column type on retrieve: {:?}", column.ttype);
                                     serde_json::Value::Null
                                 }
                             };
