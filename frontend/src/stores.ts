@@ -11,6 +11,7 @@ export interface TableColumn {
 
 export interface Table {
     name: string;
+    has_pk_key: boolean;
   columns: TableColumn[];
 }
 

@@ -10,6 +10,7 @@ use super::Response;
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct TableResponse {
     name: String,
+    has_pk_key: bool,
     columns: Vec<ColumnResponse>    
 }
 
@@ -27,6 +28,7 @@ pub async fn get_all_tables(app_state: State<AppState>) -> impl Responder {
             table.name.clone(),
             TableResponse {
                 name: table.name.clone(),
+                has_pk_key: table.has_pk_key(),
                 columns: table.columns.iter().map(|column| ColumnResponse {
                     name: column.name.clone(),
                     r#type: column.ttype.clone(),

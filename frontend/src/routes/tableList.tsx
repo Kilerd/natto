@@ -10,16 +10,6 @@ import { DataTable } from '@/components/base/DataTable';
 import { Button } from '@/components/ui/button';
 
 
-export type Payment = {
-    id: string
-    amount: number
-    status: "pending" | "processing" | "success" | "failed"
-    email: string
-}
-
-
-
-
 
 const TableList: React.FC = () => {
     const { name } = useParams();

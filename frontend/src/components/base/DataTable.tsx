@@ -33,7 +33,7 @@ export function DataTable<TData, TValue>({
         }
     })
 
-    const[tableFilter, setTableFilter] = useAtom(tableFilterAtom);
+    const [tableFilter, setTableFilter] = useAtom(tableFilterAtom);
 
 
     console.log(columns);

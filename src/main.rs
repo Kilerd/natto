@@ -2,27 +2,16 @@ use std::sync::Arc;
 
 use axum::http::HeaderValue;
 use gotcha::{axum::{http::Method, routing::MethodFilter, }, GotchaApp, };
+use state::{Column, Table};
 use tokio_postgres::{Client, NoTls};
 use tracing::{info, debug};
 use tracing_subscriber;
 use tower_http::cors::CorsLayer;
+
 mod crud;
 
-#[derive(Debug, Clone)]
-struct Column {
-    name: String,
-    ttype:String,
-    nullable: bool,
-    default: Option<String>,
-    primary_key: bool,
-    foreign_key: bool,
-    index: i32
-}
-#[derive(Debug)]
-struct Table {
-    name: String,
-    columns: Vec<Column>,
-}
+pub(crate)  mod state;
+
 
 #[derive(Clone)]
 pub(crate)  struct AppState {
