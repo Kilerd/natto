@@ -1,13 +1,9 @@
 import { tableDataAtom, tableNameAtom, tablesAtom } from '@/stores';
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '../components/ui/table';
-import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { atom, useAtom, useAtomValue } from 'jotai';
-import { atomWithRefresh, loadable } from 'jotai/utils';
+import { useAtom, useAtomValue } from 'jotai';
 import { useEffect, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { columnDefsGenrator } from '@/components/base/tableUtils';
 import { DataTable } from '@/components/base/DataTable';
-import { Button } from '@/components/ui/button';
 
 
 
