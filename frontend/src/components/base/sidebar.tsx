@@ -26,8 +26,10 @@ const Sidebar: React.FC = () => {
     <div className="w-64 bg-gray-100 p-4">
       <h2 className="text-xl font-semibold mb-4">Natto <span className="text-sm text-gray-500">v0.1</span></h2>
       <ul className="space-y-2">
-        {Object.values(tables).map((table, index) => (
-          <li key={index}>
+        {Object.values(tables)
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((table) => (
+          <li key={table.name}>
             <Button
               variant="outline"
               className="w-full justify-start"

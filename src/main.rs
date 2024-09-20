@@ -1,31 +1,35 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use axum::http::HeaderValue;
-use gotcha::{axum::{http::Method, routing::MethodFilter, }, GotchaApp, };
+use gotcha::{
+    axum::{http::Method, routing::MethodFilter},
+    GotchaApp,
+};
 use state::{Column, ColumnType, Table};
 use tokio_postgres::{Client, NoTls};
-use tracing::{info, debug};
+use tower_http::cors::{CorsLayer, MaxAge};
+use tracing::{debug, info};
 use tracing_subscriber;
-use tower_http::cors::CorsLayer;
 
 mod crud;
 
-pub(crate)  mod state;
-
+pub(crate) mod state;
 
 #[derive(Clone)]
-pub(crate)  struct AppState {
+pub(crate) struct AppState {
     client: Arc<Client>,
-    tables: Arc<Vec<Table>>
+    tables: Arc<Vec<Table>>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     tracing_subscriber::fmt::init();
 
-    let (client, connection) = tokio_postgres::connect("postgresql://postgres:password@192.168.100.129/natto?connect_timeout=10", NoTls).await?;
-
+    let (client, connection) = tokio_postgres::connect(
+        "postgresql://postgres:password@192.168.100.129/natto?connect_timeout=10",
+        NoTls,
+    )
+    .await?;
 
     tokio::spawn(async move {
         if let Err(e) = connection.await {
@@ -34,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     info!("Connected to database");
-    
+
     // Query to retrieve all tables and their schemas in the public schema
     let query = "
         SELECT 
@@ -60,9 +64,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for table_name in &tables {
         debug!("table found in public schema: {}", table_name);
     }
-
-
-
 
     let mut tables_info: Vec<Table> = Vec::new();
 
@@ -90,17 +91,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ordinal_position;
         ";
 
-        let column_rows = client.query(column_query, &[table_name]).await.expect("Failed to fetch column information");
+        let column_rows = client
+            .query(column_query, &[table_name])
+            .await
+            .expect("Failed to fetch column information");
 
-        let columns: Vec<Column> = column_rows.iter().map(|row| Column {
-            name: row.get("column_name"),
-            ttype: ColumnType::from_str(row.get("data_type")),
-            nullable: row.get::<_, String>("is_nullable") == "YES",
-            default: row.get("column_default"),
-            primary_key: row.get("is_primary_key"),
-            foreign_key: row.get("is_foreign_key"),
-            index: row.get("ordinal_position"),
-        }).collect();
+        let columns: Vec<Column> = column_rows
+            .iter()
+            .map(|row| Column {
+                name: row.get("column_name"),
+                ttype: ColumnType::from_str(row.get("data_type")),
+                nullable: row.get::<_, String>("is_nullable") == "YES",
+                default: row.get("column_default"),
+                primary_key: row.get("is_primary_key"),
+                foreign_key: row.get("is_foreign_key"),
+                index: row.get("ordinal_position"),
+            })
+            .collect();
 
         tables_info.push(Table {
             name: table_name.clone(),
@@ -111,19 +118,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app_state = AppState {
         client: Arc::new(client),
-        tables: Arc::new(tables_info)
+        tables: Arc::new(tables_info),
     };
-
 
     info!("start web server on http://127.0.0.1:8000");
     GotchaApp::new()
-    .get("/tables", crud::table_list::get_all_tables)
+        .get("/tables", crud::table_list::get_all_tables)
         .post("/retrieve", crud::retrieval::retrieve_data)
         .post("/create", crud::creation::create_data)
         .post("/delete", crud::deletion::delete_data)
-        .layer(CorsLayer::permissive())
+        .layer(CorsLayer::permissive().max_age(MaxAge::exact(Duration::from_secs(60 * 60 * 7))))
         .data(app_state)
         .done()
-        .serve("127.0.0.1", 8000).await;
+        .serve("127.0.0.1", 8000)
+        .await;
     Ok(())
 }
