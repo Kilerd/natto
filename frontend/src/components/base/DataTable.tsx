@@ -4,6 +4,8 @@ import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import React from "react"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "../ui/dropdown-menu"
+import { tableFilterAtom } from "@/stores"
+import { useAtom } from "jotai"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -31,6 +33,7 @@ export function DataTable<TData, TValue>({
         }
     })
 
+    const[tableFilter, setTableFilter] = useAtom(tableFilterAtom);
 
 
     console.log(columns);
@@ -38,10 +41,10 @@ export function DataTable<TData, TValue>({
         <div>
             <div className="flex items-center py-4">
                 <Input
-                    placeholder="Filter emails..."
-                    value={(table.getColumn("brand")?.getFilterValue() as string) ?? ""}
+                    value={tableFilter ?? ""}
+                    placeholder="Filter by keyword..."
                     onChange={(event) =>
-                        table.getColumn("brand")?.setFilterValue(event.target.value)
+                        setTableFilter(event.target.value)
                     }
                     className="max-w-sm"
                 />

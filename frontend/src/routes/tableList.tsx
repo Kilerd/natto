@@ -1,4 +1,4 @@
-import { tablesAtom } from '@/stores';
+import { tableDataAtom, tableNameAtom, tablesAtom } from '@/stores';
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '../components/ui/table';
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { atom, useAtom, useAtomValue } from 'jotai';
@@ -20,24 +20,6 @@ export type Payment = {
 
 
 
-const tableNameAtom = atom('');
-const pageAtom = atom(0);
-
-export const tableDataFetcher = atomWithRefresh(async (get) => {
-    const response = await fetch('http://127.0.0.1:8000/retrieve', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            table: get(tableNameAtom),
-            page: get(pageAtom)
-        }),
-    });
-    return await response.json();
-});
-
-export const tableDataAtom = loadable(tableDataFetcher);
 
 const TableList: React.FC = () => {
     const { name } = useParams();
@@ -65,19 +47,11 @@ const TableList: React.FC = () => {
                     <h1 className="text-2xl font-bold">Table {tableName}</h1>
                 </div>
                 <div className="container mx-auto">
-                    {tableData.state === 'loading' && <p className="m-2">Loading...</p>}
-                    {tableData.state === 'hasError' && <p className="m-2">Error loading data</p>}
-                    {tableData.state === 'hasData' && (
-                        <div >
-                            <DataTable columns={columns} data={tableData.data} />
-                        </div>
-                    )}
+                    <div >
+                        <DataTable columns={columns} data={tableData.state === 'hasData' ? tableData.data : []} />
+                    </div>
                 </div>
-
             </div>
-
-
-
         </>
     )
 }
