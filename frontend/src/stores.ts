@@ -1,3 +1,4 @@
+import { SortingState } from '@tanstack/react-table';
 import { atom } from 'jotai';
 import { atomWithRefresh, loadable } from 'jotai/utils';
 
@@ -33,6 +34,8 @@ export const tablesAtom = atom<Record<string, Table>>({});
 export  const tableNameAtom = atom('');
 export const tablePageAtom = atom(0);
 export const tableFilterAtom = atom<string | null>(null);
+
+export const tableSortingAtom = atom<SortingState>([]);
 
 export const tableDataFetcher = atomWithRefresh(async (get) => {
     const filter = get(tableFilterAtom);

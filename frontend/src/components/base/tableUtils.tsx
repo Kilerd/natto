@@ -1,8 +1,25 @@
 import { ColumnType, TableColumn } from "@/stores";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, SortDirection } from "@tanstack/react-table";
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { ArrowUpDown } from "lucide-react";
+import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from "@radix-ui/react-icons";
+
+function getNextSortState(currentState: SortDirection | false): boolean |undefined {
+    switch (currentState) {
+        case "asc":
+            return true;
+        case "desc":
+            return undefined;
+        case false:
+            return false;
+        default:
+            return false;
+    }
+}
+
 
 export function columnDefGenrator<T>(columnsDefinition: TableColumn): ColumnDef<T> {
     console.log("columnDefGenrator", columnsDefinition);
@@ -11,10 +28,19 @@ export function columnDefGenrator<T>(columnsDefinition: TableColumn): ColumnDef<
             return {
                 id: columnsDefinition.name,
                 accessorKey: columnsDefinition.name,
-                header: ({ table }) => {
-                    const headerText = columnsDefinition.name.charAt(0).toUpperCase() + columnsDefinition.name.slice(1);
-                    return headerText;
-                },
+                
+                header: ({ column }) => {
+                    console.log("column.getIsSorted()", column.getIsSorted());
+                    return (
+                      <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(getNextSortState(column.getIsSorted()), true)}
+                      >
+                        {columnsDefinition.name.charAt(0).toUpperCase() + columnsDefinition.name.slice(1)}
+                        {column.getIsSorted() === false ? <CaretSortIcon className="ml-2 h-4 w-4" /> : column.getIsSorted() === "asc" ? <CaretUpIcon className="ml-2 h-4 w-4" /> : <CaretDownIcon className="ml-2 h-4 w-4" />}
+                      </Button>
+                    )
+                  },
                 cell: ({ row }) => {
                     const value = row.getValue<any>(columnsDefinition.name);
                     return value;

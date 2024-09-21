@@ -1,10 +1,10 @@
-import { ColumnDef, useReactTable, getCoreRowModel, flexRender, getPaginationRowModel, VisibilityState } from "@tanstack/react-table"
+import { ColumnDef, useReactTable, getCoreRowModel, flexRender, getPaginationRowModel, VisibilityState, getSortedRowModel } from "@tanstack/react-table"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../ui/table"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
-import React from "react"
+import React, { useEffect } from "react"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "../ui/dropdown-menu"
-import { TableColumn, tableDataAtom, tableDataFetcher, tableFilterAtom } from "@/stores"
+import { TableColumn, tableDataAtom, tableDataFetcher, tableFilterAtom, tableSortingAtom } from "@/stores"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { FilterIcon } from "lucide-react"
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog"
@@ -29,21 +29,30 @@ export function DataTable<TData, TValue>({
     const [columnVisibility, setColumnVisibility] =
         React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
+    const [tableSorting, setTableSorting] = useAtom(tableSortingAtom);
     const table = useReactTable({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
+        getSortedRowModel: getSortedRowModel(),
+        onSortingChange: setTableSorting,
         onRowSelectionChange: setRowSelection,
         state: {
             columnVisibility,
-            rowSelection
+            rowSelection,
+            sorting: tableSorting
         }
     })
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     
     const [tableFilter, setTableFilter] = useAtom(tableFilterAtom);
+
+    useEffect(() => {
+        console.log("tableSorting", tableSorting);
+    }, [tableSorting]);
+
     const refreshTableData = useSetAtom(tableDataFetcher);
     const [newRecord, setNewRecord] = React.useState<Record<string, string | number>>({});
 
