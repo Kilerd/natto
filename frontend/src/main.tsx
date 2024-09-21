@@ -4,6 +4,7 @@ import App from './App.tsx'
 import './index.css'
 import { Provider } from 'jotai'
 import { BrowserRouter } from 'react-router-dom'
+import { Toaster } from './components/ui/sonner.tsx'
 
 
 createRoot(document.getElementById('root')!).render(
@@ -11,6 +12,7 @@ createRoot(document.getElementById('root')!).render(
     <Provider>
       <BrowserRouter>
         <App />
+        <Toaster richColors />
       </BrowserRouter>
     </Provider>
   </StrictMode>,

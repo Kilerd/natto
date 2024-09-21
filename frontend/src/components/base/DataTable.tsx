@@ -11,6 +11,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, D
 import { DialogHeader } from "../ui/dialog"
 import { Label } from "../ui/label"
 import { ColumnTypeToCreateComponent } from "./tableUtils"
+import { toast } from "sonner"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -79,10 +80,13 @@ export function DataTable<TData, TValue>({
             // Close the dialog after successful creation
             setIsDialogOpen(false);
             // Refresh the table data after successful creation
+            toast.success(`Record created successfully.`)
             refreshTableData();
         })
         .catch((error) => {
-            console.error('Error:', error);
+            toast.error(`Error on creating record.`, {
+                description: error,
+            })
         });
         resetNewRecord();
     };
