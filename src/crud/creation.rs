@@ -1,3 +1,5 @@
+use crate::crud::JsonResponse;
+use crate::error::NattoError;
 use crate::state::ColumnType;
 use crate::AppState;
 use gotcha::tracing::{debug, warn};
@@ -15,20 +17,15 @@ pub(crate) struct CreateData {
     values: Value,
 }
 #[debug_handler]
-pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> impl Responder {
+pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> Result<JsonResponse<bool>, NattoError> {
     let table_name = &payload.table;
     let values = &payload.values;
 
     // Find the table in the app state
-    let table = match data.tables.iter().find(|t| t.name == *table_name) {
-        Some(t) => t,
-        None => {
-            return Json(serde_json::json!({
-                "error": format!("Table '{}' not found", table_name)
-            }))
-            .into_response()
-        }
+    let Some(table) = data.tables.iter().find(|t| t.name == *table_name) else {
+        return Err(NattoError::TableNotFound(table_name.to_string()));
     };
+
 
     let column_names = table
         .columns
@@ -52,11 +49,9 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
         .collect_vec();
     
     if column_names.is_empty() {
-        return Json(serde_json::json!({
-            "error": "No valid columns provided for insertion"
-        }))
-        .into_response();
+        return Err(NattoError::NoValidColumnsProvidedForInsertion);
     }
+
 
     // Construct the SQL query
     let query = format!(
@@ -128,54 +123,8 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
         .collect();
 
     let ret = data.client.query(&query, &param_refs[..]);
-    match ret.await {
-        Ok(rows) => {
-            trace!("creation return rows: {:?}", &rows);
-            // if let Some(row) = rows.get(0) {
-            //     let result: serde_json::Value = table
-            //         .columns
-            //         .iter()
-            //         .enumerate()
-            //         .map(|(i, column)| {
-            //             let value = match column.ttype.as_str() {
-            //                 "integer" => serde_json::Value::Number(row.get::<_, i32>(i).into()),
-            //                 "text" | "character varying" => {
-            //                     serde_json::Value::String(row.get::<_, String>(i))
-            //                 }
-            //                 // Add more type conversions as needed
-            //                 _ => {
-            //                     warn!("Unsupported column type: {}", column.ttype);
-            //                     serde_json::Value::Null
-            //                 }
-            //             };
-            //             (column.name.clone(), value)
-            //         })
-            //         .collect();
-
-            //     Json(serde_json::json!({
-            //         "message": "Data inserted successfully",
-            //         "data": result
-            //     }))
-            //     .into_response()
-            // } else {
-            //     Json(serde_json::json!({
-            //         "error": "No data returned after insertion"
-            //     }))
-            //     .into_response()
-            // }
-
-            Json(serde_json::json!({
-                "ok": true
-            }))
-            .into_response()
-        }
-            Err(e) => {
-                warn!("Failed to execute query: {}", e);
-                Json(serde_json::json!({
-                    "error": format!("Failed to execute query: {}", e)
-                }))
-                .into_response()
-            }
-        .into_response(),
-    }
+    let rows = ret.await?;
+    trace!("creation return rows: {:?}", &rows);
+    Ok(JsonResponse::new(true))
+    
 }

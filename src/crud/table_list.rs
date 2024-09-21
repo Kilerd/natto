@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use gotcha::{ Responder, State, Json};
 use serde::{Deserialize, Serialize};
-use crate::{state::ColumnType, AppState};
+use crate::{error::NattoError, state::ColumnType, AppState};
 use serde_json::json;
 
-use super::Response;
+use super::{JsonResponse};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct TableResponse {
@@ -17,10 +17,12 @@ pub(crate) struct TableResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct ColumnResponse     {
     name: String,
-    r#type: ColumnType
+    r#type: ColumnType,
+    primary_key: bool,
+
 }   
 
-pub async fn get_all_tables(app_state: State<AppState>) -> impl Responder {
+pub async fn get_all_tables(app_state: State<AppState>) -> Result<JsonResponse<HashMap<String, TableResponse>>, NattoError> {
     let tables = app_state.tables.clone();
     
     let table_info: HashMap<String, TableResponse> = tables.iter().map(|table| {
@@ -32,13 +34,14 @@ pub async fn get_all_tables(app_state: State<AppState>) -> impl Responder {
                 columns: table.columns.iter().map(|column| ColumnResponse {
                     name: column.name.clone(),
                     r#type: column.ttype.clone(),
+                    primary_key: column.primary_key,
                 }).collect(),
             }
         )
     }).collect();
     
     
-    Json(Response{data: table_info}).into_response()
+    Ok(JsonResponse::new(table_info))
 }
 
 

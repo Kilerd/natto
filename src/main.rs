@@ -8,10 +8,11 @@ use gotcha::{
 use state::{Column, ColumnType, Table};
 use tokio_postgres::{Client, NoTls};
 use tower_http::cors::{CorsLayer, MaxAge};
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 use tracing_subscriber;
 
 mod crud;
+pub(crate) mod error;
 
 pub(crate) mod state;
 
@@ -32,8 +33,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
+            match connection.await {
+                Ok(_) => {
+                    info!("Database connection closed. Attempting to reconnect...");
+                },
+                Err(e) => {
+                    error!("Connection error: {}. Attempting to reconnect...", e);
+                    tokio::time::sleep(Duration::from_secs(5)).await;
+            }
         }
     });
 

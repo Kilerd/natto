@@ -1,8 +1,11 @@
+use crate::error::NattoError;
 use crate::AppState;
 use gotcha::tracing::{debug, warn};
 use gotcha::{Json, Responder, State};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+use super::JsonResponse;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct DeleteData {
@@ -10,51 +13,29 @@ pub(crate) struct DeleteData {
     pk: Value,
 }
 
-pub async fn delete_data(data: State<AppState>, payload: Json<DeleteData>) -> impl Responder {
+pub async fn delete_data(
+    data: State<AppState>,
+    payload: Json<DeleteData>,
+) -> Result<JsonResponse<bool>, NattoError> {
     let table_name = &payload.table;
-    let primary_key = &payload.pk;
+    let primary_key_value = &payload.pk;
 
     // Find the table in the app state
-    let table = match data.tables.iter().find(|t| t.name == *table_name) {
-        Some(t) => t,
-        None => {
-            return Json(serde_json::json!({
-                "error": format!("Table '{}' not found", table_name)
-            }))
-            .into_response()
-        }
+    let Some(table) = data.tables.iter().find(|t| t.name == *table_name) else {
+        return Err(NattoError::TableNotFound(table_name.to_string()));
     };
     // Find the primary key column from the table configuration
-    let primary_key = match table.columns.iter().find(|col| col.primary_key == true) {
-        Some(col) => &col.name,
-        None => {
-            return Json(serde_json::json!({
-                "error": format!("No primary key found for table '{}'", table_name)
-            }))
-            .into_response();
-        }
+    let Some(primary_key) = table.find_pk_key() else {
+        return Err(NattoError::TableDoesNotHavePrimaryKey(
+            table_name.to_string(),
+        ));
     };
 
-    let query = format!("DELETE FROM {} WHERE {} = $1 RETURNING *", table_name, primary_key);
+    let query = format!(
+        "DELETE FROM {} WHERE {} = $1 RETURNING *",
+        table_name, primary_key.name
+    );
 
-    debug!("Query: {}", query);
-    match data.client.query(&query, &[&primary_key]).await {
-        Ok(rows) => {
-            if rows.is_empty() {
-                Json(serde_json::json!({
-                    "message": format!("No row found with id {} in table {}", primary_key, table_name)
-                }))
-                .into_response()
-            } else {
-                Json(serde_json::json!({
-                    "message": format!("Successfully deleted row with id {} from table {}", primary_key, table_name)
-                }))
-                .into_response()
-            }
-        }
-        Err(e) => Json(serde_json::json!({
-            "error": format!("Failed to execute delete query: {}", e)
-        }))
-        .into_response(),
-    }
+    debug!("Query: {}, primary_key: {}", query, primary_key_value);
+    Ok(JsonResponse::new(true))
 }

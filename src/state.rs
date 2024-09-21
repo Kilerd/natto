@@ -13,6 +13,10 @@ impl Table {
     pub fn has_pk_key(&self) -> bool {
         self.columns.iter().any(|c| c.primary_key)
     }
+
+    pub fn find_pk_key(&self) -> Option<&Column> {
+        self.columns.iter().find(|c| c.primary_key)
+    }
 }   
 
 
