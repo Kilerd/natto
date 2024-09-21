@@ -1,42 +1,78 @@
-import { ColumnDef, useReactTable, getCoreRowModel, flexRender, getPaginationRowModel, VisibilityState, getSortedRowModel } from "@tanstack/react-table"
+import { useReactTable, getCoreRowModel, flexRender, getPaginationRowModel, VisibilityState } from "@tanstack/react-table"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../ui/table"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
-import React, { useEffect } from "react"
+import React, { useEffect, useMemo } from "react"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "../ui/dropdown-menu"
-import { TableColumn, tableDataAtom, tableDataFetcher, tableFilterAtom, tableSortingAtom } from "@/stores"
-import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import { TableColumn, tableDataFetcher, tableFilterAtom, tableSortingAtom } from "@/stores"
+import { useAtom, useSetAtom } from "jotai"
 import { FilterIcon } from "lucide-react"
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog"
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogFooter } from "../ui/dialog"
 import { DialogHeader } from "../ui/dialog"
-import { Label } from "../ui/label"
-import { ColumnTypeToCreateComponent } from "./tableUtils"
+import { columnDefsGenrator, ColumnTypeToCreateComponent } from "./tableUtils"
 import { toast } from "sonner"
 
 interface DataTableProps<TData, TValue> {
-    columns: ColumnDef<TData, TValue>[]
+
     data: TData[],
     columnDefinitions: TableColumn[],
     tableName: string
 }
 
 export function DataTable<TData, TValue>({
-    columns,
     data,
-    columnDefinitions,tableName
+    columnDefinitions,
+    tableName
 }: DataTableProps<TData, TValue>) {
 
     const [columnVisibility, setColumnVisibility] =
         React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
     const [tableSorting, setTableSorting] = useAtom(tableSortingAtom);
+    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+    
+    const [tableFilter, setTableFilter] = useAtom(tableFilterAtom);
+    const [newRecord, setNewRecord] = React.useState<Record<string, string | number>>({});
+
+
+    const handleDelete = (id: string) => {
+        console.log("deleting record", tableName, id);
+        fetch('http://127.0.0.1:8000/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                table: tableName, 
+                pk: id
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            toast.success(`Record deleted successfully.`)
+            refreshTableData();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            toast.error(`Error on deleting record.`, {
+                description: error,
+            })
+        });
+
+    };
+
+    const columns = useMemo(() => {
+        return columnDefsGenrator(columnDefinitions, handleDelete)
+    }, [columnDefinitions]);
+
     const table = useReactTable({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
-        getSortedRowModel: getSortedRowModel(),
+        // getSortedRowModel: getSortedRowModel(),
         onSortingChange: setTableSorting,
         onRowSelectionChange: setRowSelection,
         state: {
@@ -45,16 +81,13 @@ export function DataTable<TData, TValue>({
             sorting: tableSorting
         }
     })
-    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-    
-    const [tableFilter, setTableFilter] = useAtom(tableFilterAtom);
-
+   
     useEffect(() => {
         console.log("tableSorting", tableSorting);
     }, [tableSorting]);
 
     const refreshTableData = useSetAtom(tableDataFetcher);
-    const [newRecord, setNewRecord] = React.useState<Record<string, string | number>>({});
+    
 
     const handleInputChange = (columnName: string, value: string) => {
         setNewRecord(prev => ({

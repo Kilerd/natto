@@ -15,7 +15,8 @@ export enum ColumnType {
 // Define interfaces for table and column information
 export interface TableColumn {
   name: string;
-  type: ColumnType;
+  type: ColumnType; 
+  primary_key: boolean;
 }
 
 export interface Table {
@@ -50,7 +51,7 @@ export const tableDataFetcher = atomWithRefresh(async (get) => {
             filter: filter?.trim() === "" ? null : filter?.trim()
         }),
     });
-    return await response.json();
+    return (await response.json()).data;
 });
 
 export const tableDataAtom = loadable(tableDataFetcher);

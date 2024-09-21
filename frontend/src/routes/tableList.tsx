@@ -23,10 +23,7 @@ const TableList: React.FC = () => {
     }, [name, setTableName]);
     const [tableData] = useAtom(tableDataAtom);
 
-    const columns = useMemo(() => {
-        console.log("memo generated", tables, tableName);
-        return columnDefsGenrator(tables[tableName]?.columns ?? [])
-    }, [tables, tableName]);
+   
 
     return (
         <>
@@ -49,7 +46,7 @@ const TableList: React.FC = () => {
                 )}
                 <div className="container mx-auto">
                     <div >
-                        <DataTable tableName={tableName} columns={columns} data={tableData.state === 'hasData' ? tableData.data : []} columnDefinitions={tables[tableName]?.columns ?? []} />
+                        <DataTable tableName={tableName} data={tableData.state === 'hasData' ? tableData.data : []} columnDefinitions={tables[tableName]?.columns ?? []} />
                     </div>
                 </div>
             </div>

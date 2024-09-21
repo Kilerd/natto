@@ -4,10 +4,12 @@ import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, CheckIcon, MoreHorizontal, Trash, TrashIcon, XIcon } from "lucide-react";
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from "@radix-ui/react-icons";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "../ui/popover";
 
-function getNextSortState(currentState: SortDirection | false): boolean |undefined {
+function getNextSortState(currentState: SortDirection | false): boolean | undefined {
     switch (currentState) {
         case "asc":
             return true;
@@ -28,19 +30,19 @@ export function columnDefGenrator<T>(columnsDefinition: TableColumn): ColumnDef<
             return {
                 id: columnsDefinition.name,
                 accessorKey: columnsDefinition.name,
-                
+
                 header: ({ column }) => {
                     console.log("column.getIsSorted()", column.getIsSorted());
                     return (
-                      <Button
-                        variant="ghost"
-                        onClick={() => column.toggleSorting(getNextSortState(column.getIsSorted()), true)}
-                      >
-                        {columnsDefinition.name.charAt(0).toUpperCase() + columnsDefinition.name.slice(1)}
-                        {column.getIsSorted() === false ? <CaretSortIcon className="ml-2 h-4 w-4" /> : column.getIsSorted() === "asc" ? <CaretUpIcon className="ml-2 h-4 w-4" /> : <CaretDownIcon className="ml-2 h-4 w-4" />}
-                      </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={() => column.toggleSorting(getNextSortState(column.getIsSorted()), true)}
+                        >
+                            {columnsDefinition.name.charAt(0).toUpperCase() + columnsDefinition.name.slice(1)}
+                            {column.getIsSorted() === false ? <CaretSortIcon className="ml-2 h-4 w-4" /> : column.getIsSorted() === "asc" ? <CaretUpIcon className="ml-2 h-4 w-4" /> : <CaretDownIcon className="ml-2 h-4 w-4" />}
+                        </Button>
                     )
-                  },
+                },
                 cell: ({ row }) => {
                     const value = row.getValue<any>(columnsDefinition.name);
                     return value;
@@ -83,7 +85,10 @@ export function columnDefGenrator<T>(columnsDefinition: TableColumn): ColumnDef<
             }
     }
 }
-export function columnDefsGenrator<T>(columnsDefines: TableColumn[]): ColumnDef<T>[] {
+export function columnDefsGenrator<T>(columnsDefines: TableColumn[], handleDelete: (id: string) => void): ColumnDef<T>[] {
+
+    const pkColumn = columnsDefines.find((column) => column.primary_key);
+
     let defs = [
         {
             id: "select",
@@ -109,7 +114,60 @@ export function columnDefsGenrator<T>(columnsDefines: TableColumn[]): ColumnDef<
         } as ColumnDef<T>,
     ];
 
-    return defs.concat(columnsDefines.map((column) => columnDefGenrator(column)))
+    const actionColumnDef = {
+        id: "actions",
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => {
+            const rowData = row.original as any
+            const pkValue: any = rowData[pkColumn?.name ?? ''];
+            return (
+                <>
+
+                    
+                    {pkColumn && <Popover>
+                        <PopoverTrigger>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                            {/* <span className="sr-only">Open menu</span> */}
+                            <TrashIcon className="h-4 w-4" />
+                        </Button></PopoverTrigger>
+                        <PopoverContent className="w-40">
+                            <p className="text-sm font-semibold mb-2">Confirm delete?</p>
+                            <div className="flex justify-end space-x-2">
+                                <Button variant="outline" size="icon" onClick={() => {}}><XIcon className="h-4 w-4" /></Button>
+                                <Button variant="destructive" size="icon" onClick={() => handleDelete(pkValue)}><CheckIcon className="h-4 w-4" /></Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>}                    
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                {/* <span className="sr-only">Open menu</span> */}
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem
+                                onClick={() => navigator.clipboard.writeText(pkValue)}
+                            >
+                                Copy payment ID
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>View customer</DropdownMenuItem>
+                            <DropdownMenuItem>View payment details</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </>
+            )
+        },
+    } as ColumnDef<T>;
+
+
+    defs = defs.concat(columnsDefines.map((column) => columnDefGenrator(column)))
+    defs.push(actionColumnDef);
+    return defs;
 }
 
 
@@ -170,7 +228,7 @@ export function ColumnTypeToCreateComponent({ columnName, columnType, value, onC
                 <Checkbox
                     id={columnName}
                     checked={value}
-                    onCheckedChange={(checked) => onChange(checked ? true :false)}
+                    onCheckedChange={(checked) => onChange(checked ? true : false)}
                 />
                 <label
                     htmlFor={columnName}
