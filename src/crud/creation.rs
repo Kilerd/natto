@@ -36,6 +36,7 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
         .enumerate()
         .filter_map(|(i, column)| {
             if let Some(value) = values.get(&column.name).cloned() {
+                trace!("column name constructer column: {:?} value: {:?}", &column.name, &value);
                 Some(column.name.clone())
             } else {
                 None
@@ -43,18 +44,13 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
         })
         .collect_vec();
 
-    let param_placeholders = table
-        .columns
-        .iter()
+    let param_placeholders = column_names.iter()
         .enumerate()
-        .filter_map(|(i, column)| {
-            if let Some(value) = values.get(&column.name).cloned() {
-                Some(format!("${}", i + 1))
-            } else {
-                None
-            }
+        .map(|(i, column)| {
+            format!("${}", i + 1)
         })
         .collect_vec();
+    
     if column_names.is_empty() {
         return Json(serde_json::json!({
             "error": "No valid columns provided for insertion"
@@ -134,6 +130,7 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
     let ret = data.client.query(&query, &param_refs[..]);
     match ret.await {
         Ok(rows) => {
+            trace!("creation return rows: {:?}", &rows);
             // if let Some(row) = rows.get(0) {
             //     let result: serde_json::Value = table
             //         .columns
@@ -172,9 +169,13 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> im
             }))
             .into_response()
         }
-        Err(e) => Json(serde_json::json!({
-            "error": format!("Failed to execute query: {}", e)
-        }))
+            Err(e) => {
+                warn!("Failed to execute query: {}", e);
+                Json(serde_json::json!({
+                    "error": format!("Failed to execute query: {}", e)
+                }))
+                .into_response()
+            }
         .into_response(),
     }
 }
