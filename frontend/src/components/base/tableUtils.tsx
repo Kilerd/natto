@@ -52,6 +52,7 @@ export function columnDefGenrator<T>(columnsDefinition: TableColumn): ColumnDef<
             }
         case ColumnType.Integer:
         case ColumnType.Float:
+        case ColumnType.Numeric:
             return {
                 id: columnsDefinition.name,
                 accessorKey: columnsDefinition.name,
@@ -180,6 +181,7 @@ export function ColumnTypeToCreateComponent({ columnName, columnType, value, onC
     console.log("ColumnTypeToCreateComponent", columnType);
     switch (columnType) {
         case ColumnType.String:
+        case ColumnType.Numeric:
             return (<div key={columnName} className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor={columnName}>
                     {columnName.charAt(0).toUpperCase() + columnName.slice(1)}
@@ -216,11 +218,9 @@ export function ColumnTypeToCreateComponent({ columnName, columnType, value, onC
                     type="number"
                     className="col-span-3"
                     value={value}
-                    onChange={(e) => onChange(parseFloat(e.target.value))}
+                    onChange={(e) => onChange(e.target.value)}
                 />
             </div>)
-
-
         case ColumnType.Boolean:
             return (<div key={columnName} className="flex items-center space-x-2">
                 <Checkbox

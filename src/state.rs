@@ -1,6 +1,9 @@
+use std::str::FromStr;
+
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::{Number, Value};
-use tracing::warn;
+use tracing::{trace, warn};
 
 use crate::error::NattoError;
 
@@ -40,6 +43,7 @@ pub enum ColumnType {
     Boolean,
     String,
     Integer,
+    Numeric,
     Float,
 }
 
@@ -50,7 +54,8 @@ impl ColumnType {
             "boolean" => ColumnType::Boolean,
             "text" | "character varying" | "character" | "varchar" => ColumnType::String,
             "integer" => ColumnType::Integer,
-            "float" | "double precision" | "real" | "double" => ColumnType::Float,
+            "float" | "double precision" | "double" | "real" => ColumnType::Float,
+            "numeric" | "decimal" => ColumnType::Numeric,
             _ => {
                 warn!("unhandled column type: {}", s);
                 unimplemented!()
@@ -87,6 +92,12 @@ impl ColumnType {
                 };
                 Ok(Box::new(v))
             }
+            ColumnType::Numeric => {
+                let Some(v) = value.as_str() else { 
+                    return Err(NattoError::ConversionError(format!("failed to convert value to real: {}", value)));
+                };
+                Ok(Box::new(v.to_string()))
+            },
         }
 
     }
@@ -106,7 +117,11 @@ impl ColumnType {
             },
             ColumnType::Float => {
                 let value = row.try_get::<_, f32>(idx)?;
-                Ok(Value::Number(Number::from_f64(value as f64).expect("can't convert f32 to f64")))
+                Ok(Value::Number(Number::from_f64(value as f64).expect("can't convert f32 to json number")))
+            },
+            ColumnType::Numeric => {
+                let value = row.try_get::<_, Decimal>(idx)?;
+                Ok(Value::String(value.to_string()))
             },
         }
     }

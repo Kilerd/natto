@@ -17,8 +17,8 @@ pub async fn delete_data(
     data: State<AppState>,
     payload: Json<DeleteData>,
 ) -> Result<JsonResponse<bool>, NattoError> {
-    let table_name = &payload.table;
-    let primary_key_value = &payload.pk;
+    let DeleteData { table, pk } = payload.0;
+    let table_name = &table;
 
     // Find the table in the app state
     let Some(table) = data.tables.iter().find(|t| t.name == *table_name) else {
@@ -31,11 +31,16 @@ pub async fn delete_data(
         ));
     };
 
+    let primary_key_value = primary_key.ttype.convert_to_sql_value(pk)?;
     let query = format!(
         "DELETE FROM {} WHERE {} = $1 RETURNING *",
         table_name, primary_key.name
     );
 
-    debug!("Query: {}, primary_key: {}", query, primary_key_value);
+    debug!("Query: {}, primary_key: {:?}", query, primary_key_value);
+    let rows = data.client.query(&query, &[&*primary_key_value]).await?;
+    if rows.is_empty() {
+        return Ok(JsonResponse::new(false));
+    }
     Ok(JsonResponse::new(true))
 }

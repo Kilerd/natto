@@ -10,6 +10,7 @@ export enum ColumnType {
     String = "String",
     Integer = "Integer",
     Float = "Float",
+    Numeric = "Numeric",
 }
 
 // Define interfaces for table and column information
