@@ -93,10 +93,11 @@ impl ColumnType {
                 Ok(Box::new(v))
             }
             ColumnType::Numeric => {
-                let Some(v) = value.as_str() else { 
+                let v = value.as_str().and_then(|it| Decimal::from_str(it).ok());
+                let Some(v) = v else {
                     return Err(NattoError::ConversionError(format!("failed to convert value to real: {}", value)));
                 };
-                Ok(Box::new(v.to_string()))
+                Ok(Box::new(v))
             },
         }
 
