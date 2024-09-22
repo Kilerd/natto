@@ -9,12 +9,21 @@ use tokio_postgres::Column;
 
 use super::JsonResponse;
 
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct Sorting {
+    pub(crate) id: String,
+    pub(crate) desc: bool,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct RetrieveData {
     table: String,
     filter: Option<String>,
     limit: Option<i32>,
     offset: Option<i32>,
+    sortings: Option<Vec<Sorting>>,
+
 }
 
 // #[debug_handler]
@@ -22,10 +31,18 @@ pub async fn retrieve_data(
     data: State<AppState>,
     payload: Json<RetrieveData>,
 ) -> Result<JsonResponse<Vec<serde_json::Value>>, NattoError> {
-    let table_name = &payload.table;
-    let limit = payload.limit.unwrap_or(10);
-    let offset = payload.offset.unwrap_or(0);
-
+    let RetrieveData {
+        table,
+        limit,
+        offset,
+        sortings,
+        filter,
+    } = payload.0;
+    
+    let table_name = &table;
+    let limit = limit.unwrap_or(10);
+    let offset = offset.unwrap_or(0);
+    let sortings = sortings.unwrap_or_default();
     // Find the table in the app state
     let table = data.tables.iter().find(|t| t.name == *table_name);
 
@@ -44,7 +61,7 @@ pub async fn retrieve_data(
     let mut query = format!("SELECT {} FROM {}", columns, table_name);
 
     // Add WHERE clause if filter is provided
-    if let Some(filter_keyword) = &payload.filter {
+    if let Some(filter_keyword) = &filter {
         let filter_conditions: Vec<String> = table
             .columns
             .iter()
@@ -75,6 +92,21 @@ pub async fn retrieve_data(
             query.push_str(&filter_conditions.join(" OR "));
         }
     }
+
+    // Add ORDER BY clause if sortings are provided
+    if !sortings.is_empty() {
+        let sort_clauses: Vec<String> = sortings
+            .iter()
+            .map(|sort| {
+                let direction = if sort.desc { "DESC" } else { "ASC" };
+                format!("{} {}", sort.id, direction)
+            })
+            .collect();
+
+        query.push_str(" ORDER BY ");
+        query.push_str(&sort_clauses.join(", "));
+    }
+
 
     // Add LIMIT and OFFSET
     query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));

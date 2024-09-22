@@ -3,7 +3,7 @@ use std::str::FromStr;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::{Number, Value};
-use tracing::{trace, warn};
+use tracing::warn;
 
 use crate::error::NattoError;
 

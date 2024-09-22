@@ -49,6 +49,7 @@ export const tableDataFetcher = atomWithRefresh(async (get) => {
         body: JSON.stringify({
             table: get(tableNameAtom),
             page: get(tablePageAtom),
+            sortings: get(tableSortingAtom),
             filter: filter?.trim() === "" ? null : filter?.trim()
         }),
     });

@@ -11,6 +11,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogFooter } from 
 import { DialogHeader } from "../ui/dialog"
 import { columnDefsGenrator, ColumnTypeToCreateComponent } from "./tableUtils"
 import { toast } from "sonner"
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../ui/pagination"
 
 interface DataTableProps<TData, TValue> {
 
@@ -30,7 +31,7 @@ export function DataTable<TData, TValue>({
     const [rowSelection, setRowSelection] = React.useState({})
     const [tableSorting, setTableSorting] = useAtom(tableSortingAtom);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-    
+
     const [tableFilter, setTableFilter] = useAtom(tableFilterAtom);
     const [newRecord, setNewRecord] = React.useState<Record<string, string | number>>({});
 
@@ -43,22 +44,22 @@ export function DataTable<TData, TValue>({
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                table: tableName, 
+                table: tableName,
                 pk: id
             }),
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-            toast.success(`Record deleted successfully.`)
-            refreshTableData();
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-            toast.error(`Error on deleting record.`, {
-                description: error,
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                toast.success(`Record deleted successfully.`)
+                refreshTableData();
             })
-        });
+            .catch((error) => {
+                console.error('Error:', error);
+                toast.error(`Error on deleting record.`, {
+                    description: error,
+                })
+            });
 
     };
 
@@ -81,13 +82,13 @@ export function DataTable<TData, TValue>({
             sorting: tableSorting
         }
     })
-   
+
     useEffect(() => {
         console.log("tableSorting", tableSorting);
     }, [tableSorting]);
 
     const refreshTableData = useSetAtom(tableDataFetcher);
-    
+
 
     const handleInputChange = (columnName: string, value: string) => {
         setNewRecord(prev => ({
@@ -102,7 +103,7 @@ export function DataTable<TData, TValue>({
 
     const handleSubmit = () => {
         console.log(newRecord);
-        
+
         fetch('http://127.0.0.1:8000/create', {
             method: 'POST',
             headers: {
@@ -113,23 +114,23 @@ export function DataTable<TData, TValue>({
                 values: newRecord
             }),
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-            // You might want to refresh the table data here
-            // For example, if you have a refresh function:
-            // refreshTableData();
-            // Close the dialog after successful creation
-            setIsDialogOpen(false);
-            // Refresh the table data after successful creation
-            toast.success(`Record created successfully.`)
-            refreshTableData();
-        })
-        .catch((error) => {
-            toast.error(`Error on creating record.`, {
-                description: error,
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                // You might want to refresh the table data here
+                // For example, if you have a refresh function:
+                // refreshTableData();
+                // Close the dialog after successful creation
+                setIsDialogOpen(false);
+                // Refresh the table data after successful creation
+                toast.success(`Record created successfully.`)
+                refreshTableData();
             })
-        });
+            .catch((error) => {
+                toast.error(`Error on creating record.`, {
+                    description: error,
+                })
+            });
         resetNewRecord();
     };
 
@@ -251,22 +252,24 @@ export function DataTable<TData, TValue>({
                     {table.getFilteredSelectedRowModel().rows.length} of{" "}
                     {table.getFilteredRowModel().rows.length} row(s) selected.
                 </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                >
-                    Previous
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                >
-                    Next
-                </Button>
+                <div>
+                <Pagination>
+                    <PaginationContent>
+                        <PaginationItem>
+                            <PaginationPrevious href="#" />
+                        </PaginationItem>
+                        <PaginationItem>
+                            <PaginationLink href="#">1</PaginationLink>
+                        </PaginationItem>
+                        <PaginationItem>
+                            <PaginationEllipsis />
+                        </PaginationItem>
+                        <PaginationItem>
+                            <PaginationNext href="#" />
+                        </PaginationItem>
+                    </PaginationContent>
+                </Pagination>
+                </div>
             </div>
         </div>
     )
