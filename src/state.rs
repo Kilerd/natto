@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Number, Value};
 use tracing::warn;
 
 use crate::error::NattoError;
@@ -89,5 +89,25 @@ impl ColumnType {
             }
         }
 
+    }
+    pub fn convert_to_json_value(&self, row: &tokio_postgres::Row, idx: usize) -> Result<Value, NattoError> {
+        match self {
+            ColumnType::Boolean => {
+                let value = row.try_get::<_, bool>(idx)?;
+                Ok(Value::Bool(value))
+            },
+            ColumnType::String => {
+                let value = row.try_get::<_, String>(idx)?;
+                Ok(Value::String(value))
+            },
+            ColumnType::Integer => {
+                let value = row.try_get::<_, i32>(idx)?;
+                Ok(Value::Number(value.into()))
+            },
+            ColumnType::Float => {
+                let value = row.try_get::<_, f32>(idx)?;
+                Ok(Value::Number(Number::from_f64(value as f64).expect("can't convert f32 to f64")))
+            },
+        }
     }
 }

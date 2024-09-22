@@ -4,6 +4,7 @@ use crate::AppState;
 use gotcha::tracing::{debug, warn};
 use gotcha::{Json, Responder, State};
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use tokio_postgres::Column;
 
 use super::JsonResponse;
@@ -81,30 +82,16 @@ pub async fn retrieve_data(
     debug!("Query: {}", query);
     let rows = data.client.query(&query, &[]).await?;
     // Convert rows to a Vec of JSON objects
-    let result: Vec<serde_json::Value> = rows
-        .iter()
-        .map(|row| {
-            let mut obj = serde_json::Map::new();
-            for (i, column) in table.columns.iter().enumerate() {
-                let value = match column.ttype {
-                    ColumnType::Integer => serde_json::Value::Number(row.get::<_, i32>(i).into()),
-                    ColumnType::String => serde_json::Value::String(row.get::<_, String>(i)),
-                    ColumnType::Float => serde_json::Value::Number(
-                        serde_json::Number::from_f64(dbg!(row.get::<_, f32>(i)) as f64)
-                            .expect("can't convert f32 to f64"),
-                    ),
-                    ColumnType::Boolean => serde_json::Value::Bool(row.get::<_, bool>(i)),
-                    // Add more type conversions as needed
-                    _ => {
-                        warn!("Unsupported column type on retrieve: {:?}", column.ttype);
-                        serde_json::Value::Null
-                    }
-                };
-                obj.insert(column.name.clone(), value);
-            }
-            serde_json::Value::Object(obj)
-        })
-        .collect();
+    
+    let mut result: Vec<Value> = Vec::new();
+    for row in rows.iter() {
+        let mut obj = Map::new();
+        for (i, column) in table.columns.iter().enumerate() {
+            let value = column.ttype.convert_to_json_value(row, i)?;
+            obj.insert(column.name.clone(), value);
+        }
+        result.push(Value::Object(obj));
+    }
 
     Ok(JsonResponse::new(result))
 }
