@@ -60,59 +60,16 @@ pub async fn create_data(data: State<AppState>, payload: Json<CreateData>) -> Re
         column_names.iter().join(", "),
         param_placeholders.iter().join(", ")
     );
-    let params: Vec<Box<dyn tokio_postgres::types::ToSql + Send + Sync>> = table
-        .columns
-        .iter()
-        .enumerate()
-        .filter_map(|(i, column)| {
-            trace!("Column: {:?} {:?}", &column.name, &column.ttype);
-            if let Some(value) = values.get(&column.name).cloned() {
-                trace!("value: {:?}", &value);
-                match column.ttype {
-                    ColumnType::Integer => {
-                        if let Some(v) = value.as_i64() {
-                            let int_value = v as i32;
-                            Some(Box::new(int_value)
-                                as Box<dyn tokio_postgres::types::ToSql + Send + Sync>)
-                        } else {
-                            None
-                        }
-                    }
-                    ColumnType::String => {
-                        if let Some(v) = value.as_str() {
-                            Some(Box::new(v.to_string())
-                                as Box<dyn tokio_postgres::types::ToSql + Send + Sync>)
-                        } else {
-                            None
-                        }
-                    },
-                    ColumnType::Float => {
-                        if let Some(v) = value.as_f64() {
-                            Some(Box::new(v as f32)
-                                as Box<dyn tokio_postgres::types::ToSql + Send + Sync>)
-                        } else {
-                            None
-                        }
-                    }
-                    ColumnType::Boolean => {
-                        if let Some(v) = value.as_bool() {
-                            Some(Box::new(v)
-                                as Box<dyn tokio_postgres::types::ToSql + Send + Sync>)
-                        } else {
-                            None
-                        }
-                    }
-                    // Add more type conversions as needed
-                    _ => {
-                        warn!("Unsupported column type on create: {:?}", column.ttype);
-                        None
-                    }
-                }
-            } else {
-                None
-            }
-        })
-        .collect_vec();
+
+    
+    let mut params = Vec::new();
+    for column in table.columns.iter() {
+        trace!("Column: {:?} {:?}", &column.name, &column.ttype);
+        if let Some(value) = values.get(&column.name).cloned() {
+            trace!("value: {:?}", &value);
+            params.push(column.ttype.convert_to_sql_value(value)?);
+        }
+    }
 
 
     debug!("Query: {}", query);

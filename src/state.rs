@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tracing::warn;
+
+use crate::error::NattoError;
 
 
 
@@ -53,5 +56,38 @@ impl ColumnType {
                 unimplemented!()
             },
         }
+    }
+
+
+    pub fn convert_to_sql_value(&self, value: Value) -> Result<Box<dyn tokio_postgres::types::ToSql + Send + Sync>, NattoError> {
+        match self {
+            ColumnType::Integer => {
+                let Some(v) = value.as_i64() else { 
+                    return Err(NattoError::ConversionError(format!("failed to convert value to integer: {}", value)));
+
+                };
+                let int_value = v as i32;
+                Ok(Box::new(int_value))
+            }
+            ColumnType::String => {
+                let Some(v) = value.as_str() else { 
+                    return Err(NattoError::ConversionError(format!("failed to convert value to string: {}", value)));
+                };
+                Ok(Box::new(v.to_string()))
+            }
+            ColumnType::Float => {
+                let Some(v) = value.as_f64() else { 
+                    return Err(NattoError::ConversionError(format!("failed to convert value to float: {}", value)));
+                };
+                Ok(Box::new(v as f32))
+            }
+            ColumnType::Boolean => {
+                let Some(v) = value.as_bool() else { 
+                    return Err(NattoError::ConversionError(format!("failed to convert value to boolean: {}", value)));
+                };
+                Ok(Box::new(v))
+            }
+        }
+
     }
 }

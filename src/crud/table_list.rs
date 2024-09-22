@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use gotcha::{ Responder, State, Json};
+use gotcha::State;
 use serde::{Deserialize, Serialize};
 use crate::{error::NattoError, state::ColumnType, AppState};
-use serde_json::json;
 
-use super::{JsonResponse};
+use super::JsonResponse;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct TableResponse {

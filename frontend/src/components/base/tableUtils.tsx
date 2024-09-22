@@ -123,8 +123,6 @@ export function columnDefsGenrator<T>(columnsDefines: TableColumn[], handleDelet
             const pkValue: any = rowData[pkColumn?.name ?? ''];
             return (
                 <>
-
-                    
                     {pkColumn && <Popover>
                         <PopoverTrigger>
                             <Button variant="ghost" className="h-8 w-8 p-0">

@@ -17,6 +17,9 @@ pub enum NattoError {
 
     #[error("Sql Execution Error: {0}")]
     SqlExecutionError(#[from] tokio_postgres::Error),
+
+    #[error("Conversion Error: {0}")]
+    ConversionError(String),
 }
 
 impl NattoError {
@@ -26,6 +29,7 @@ impl NattoError {
             NattoError::SqlExecutionError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             NattoError::TableNotFound(_) => StatusCode::NOT_FOUND,
             NattoError::TableDoesNotHavePrimaryKey(_) => StatusCode::BAD_REQUEST,
+            NattoError::ConversionError(_) => StatusCode::BAD_REQUEST,
         }
     }
     fn log(&self) {
