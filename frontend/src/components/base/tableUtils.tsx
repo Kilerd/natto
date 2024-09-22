@@ -84,6 +84,9 @@ export function columnDefGenrator<T>(columnsDefinition: TableColumn): ColumnDef<
                 enableSorting: true,
                 enableHiding: true,
             }
+
+        default:
+            throw new Error(`columnDefGenrator unimplemented column type: ${columnsDefinition.type}`);
     }
 }
 export function columnDefsGenrator<T>(columnsDefines: TableColumn[], handleDelete: (id: string) => void): ColumnDef<T>[] {
@@ -235,5 +238,7 @@ export function ColumnTypeToCreateComponent({ columnName, columnType, value, onC
                     {columnName.charAt(0).toUpperCase() + columnName.slice(1)}
                 </label>
             </div>)
+        default:
+            throw new Error(`ColumnTypeToCreateComponent unimplemented column type: ${columnType}`);
     }
 }   
