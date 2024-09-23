@@ -4,7 +4,7 @@ import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { ArrowUpDown, CheckIcon, MoreHorizontal, Trash, TrashIcon, XIcon } from "lucide-react";
+import { ArrowUpDown, CheckIcon, MoreHorizontal, PencilIcon, Trash, TrashIcon, XIcon } from "lucide-react";
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from "@radix-ui/react-icons";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "../ui/popover";
@@ -89,7 +89,7 @@ export function columnDefGenrator<T>(columnsDefinition: TableColumn): ColumnDef<
             throw new Error(`columnDefGenrator unimplemented column type: ${columnsDefinition.type}`);
     }
 }
-export function columnDefsGenrator<T>(columnsDefines: TableColumn[], handleDelete: (id: string) => void): ColumnDef<T>[] {
+export function columnDefsGenrator<T>(columnsDefines: TableColumn[], handleDelete: (id: string) => void, onEditDialogOpen: (data: any) => void): ColumnDef<T>[] {
 
     const pkColumn = columnsDefines.find((column) => column.primary_key);
 
@@ -127,20 +127,27 @@ export function columnDefsGenrator<T>(columnsDefines: TableColumn[], handleDelet
             const pkValue: any = rowData[pkColumn?.name ?? ''];
             return (
                 <>
+
+                    {pkColumn &&
+                        <Button variant="ghost" className="h-8 w-8 p-0" onClick={() => onEditDialogOpen(rowData)}>
+                            {/* <span className="sr-only">Open menu</span> */}
+                            <PencilIcon className="h-4 w-4" />
+                        </Button>
+                    }
                     {pkColumn && <Popover>
                         <PopoverTrigger>
                             <Button variant="ghost" className="h-8 w-8 p-0">
-                            {/* <span className="sr-only">Open menu</span> */}
-                            <TrashIcon className="h-4 w-4" />
-                        </Button></PopoverTrigger>
+                                {/* <span className="sr-only">Open menu</span> */}
+                                <TrashIcon className="h-4 w-4" />
+                            </Button></PopoverTrigger>
                         <PopoverContent className="w-40">
                             <p className="text-sm font-semibold mb-2">Confirm delete?</p>
                             <div className="flex justify-end space-x-2">
-                                <Button variant="outline" size="icon" onClick={() => {}}><XIcon className="h-4 w-4" /></Button>
+                                <Button variant="outline" size="icon" onClick={() => { }}><XIcon className="h-4 w-4" /></Button>
                                 <Button variant="destructive" size="icon" onClick={() => handleDelete(pkValue)}><CheckIcon className="h-4 w-4" /></Button>
                             </div>
                         </PopoverContent>
-                    </Popover>}                    
+                    </Popover>}
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -174,14 +181,18 @@ export function columnDefsGenrator<T>(columnsDefines: TableColumn[], handleDelet
 
 
 interface ColumnTypeToCreateComponentProps {
-    columnName: string;
-    columnType: ColumnType;
+    columnDefinition: TableColumn;
+    editMode?: boolean;
     value: any;
     onChange: (value: any) => void;
 }
 
-export function ColumnTypeToCreateComponent({ columnName, columnType, value, onChange }: ColumnTypeToCreateComponentProps) {
-    console.log("ColumnTypeToCreateComponent", columnType);
+export function ColumnTypeToCreateComponent({ columnDefinition, value, onChange, editMode = false }: ColumnTypeToCreateComponentProps) {
+    const columnName = columnDefinition.name;
+    const columnType = columnDefinition.type;
+    
+    const isPrimaryKey = columnDefinition.primary_key;
+    console.log("ColumnTypeToCreateComponent", columnDefinition);
     switch (columnType) {
         case ColumnType.String:
         case ColumnType.Numeric:
@@ -193,6 +204,7 @@ export function ColumnTypeToCreateComponent({ columnName, columnType, value, onC
                     id={columnName}
                     type="text"
                     className="col-span-3"
+                    disabled={isPrimaryKey && editMode}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                 />
@@ -208,6 +220,7 @@ export function ColumnTypeToCreateComponent({ columnName, columnType, value, onC
                     type="number"
                     className="col-span-3"
                     value={value}
+                    disabled={isPrimaryKey && editMode}
                     onChange={(e) => onChange(parseInt(e.target.value, 10))}
                 />
             </div>)

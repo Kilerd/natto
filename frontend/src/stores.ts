@@ -2,8 +2,20 @@ import { SortingState } from '@tanstack/react-table';
 import { atom } from 'jotai';
 import { atomWithRefresh, loadable } from 'jotai/utils';
 
-export const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import axios from 'axios';
+import { toast } from 'sonner';
 
+export const fetcher = async (url: string) => {
+    try {
+        const response = await axios.get(url);
+        return response.data;
+    } catch (error) {
+        toast.error('An error occurred while fetching data',{
+            description: error,
+        });
+    }
+
+};
 
 export enum ColumnType {
     Boolean = "Boolean"     ,
@@ -28,33 +40,3 @@ export interface Table {
 
 // Create an atom to store the tables using a hashmap, where the key is the table name
 export const tablesAtom = atom<Record<string, Table>>({});
-
-
-
-
-
-export  const tableNameAtom = atom('');
-export const tablePageAtom = atom(0);
-export const tableFilterAtom = atom<string | null>(null);
-
-export const tableSortingAtom = atom<SortingState>([]);
-
-export const tableDataFetcher = atomWithRefresh(async (get) => {
-    const filter = get(tableFilterAtom);
-    const response = await fetch('http://127.0.0.1:8000/retrieve', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            table: get(tableNameAtom),
-            page: get(tablePageAtom),
-            sortings: get(tableSortingAtom),
-            filter: filter?.trim() === "" ? null : filter?.trim()
-        }),
-    });
-    return (await response.json()).data;
-});
-
-export const tableDataAtom = loadable(tableDataFetcher);
-
